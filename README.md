@@ -3,7 +3,7 @@ ViewjazzleJS
 
 Use PhantomJS and Jasmine to test multiple viewports with TeamCity Console Reporter
 
-ViewjazzleJS provides a mechanism for running Jasmine tests for multiple UI layout sizes using PhantomJS.
+ViewjazzleJS provides a mechanism for running Jasmine tests for multiple web UI screen sizes using PhantomJS.
 
 * Defines a parametrised input to PhantomJS e.g. phantomjs viewjazzle.js [jasmine-spec-file] [target-url].
 * Provides a configuration module to define the viewport sizes (responsive modes) and additional parameters.
