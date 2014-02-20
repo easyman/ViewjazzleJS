@@ -1,21 +1,22 @@
-/*global window, jasmine, require, phantom, console */
+/* global window, jasmine, require, phantom, console */
 (function () {
     'use strict';
 
     var system = require('system'),
         args = system.args,
         config = require('./viewjazzle-config'),
-        consoleReporter = config.consoleReporter,
         errorPrefix = 'viewjazzle',
         index = 0,
-        jQueryPath = config.jQueryPath,
-        libPath = config.libPath,
+        jsLibraryPath = config.jsLibraryPath,
+        jasminePath = config.jasminePath,
         page,
         render = config.render,
-        reporter = config.jasmineReporter,
+        reporterName = config.reporterName,
+        reporterPath = config.reporterPath,
         spec,
-        testFailed = config.testMessage.testFailed,
-        testSuiteFinished = config.testMessage.testSuiteFinished,
+        testFailed = config.testMessages.testFailed,
+        testSuiteFinished = config.testMessages.testSuiteFinished,
+        timeout = config.timeout,
         url,
         viewports = config.viewports;
 
@@ -24,8 +25,8 @@
         return;
     }
 
-	if (reporter === 'TapReporter' || reporter === 'ConsoleReporter' || reporter === 'TerminalReporter') {
-	    console.log(reporter + ' is not compatible with ' + errorPrefix + '. The reporter must be capable of grouped output similar to the TeamCity Reporter.');
+    if (reporterName === 'ConsoleReporter' || reporterName === 'TerminalReporter') {
+        console.log(reporterName + ' is not compatible with ' + errorPrefix + '. The reporter must be capable of grouped output similar to the TeamCity Reporter.');
 		console.log('Feel free to customise your own reporter!');
 		phantom.exit();
     }
@@ -43,10 +44,21 @@
         phantom.exit();
     }
 
-    function consoleMessage(msg) {
-        var testFinished = false, sPos, ePos, title;
+    function closePage() {
+        page.close();
+    }
 
-		console.log(msg);
+    function consoleMessage(msg) {
+        var sPos, ePos, title, isLogged = true;
+
+        if (reporterName === 'TapReporter' && msg.indexOf(testSuiteFinished) !== -1) {
+            isLogged = false; // don't log the custom Tap Reporter message 'testSuiteFinished'
+        }
+
+        if (isLogged) {
+            console.log(msg);
+        }
+
 		if (index < viewports.length && msg.indexOf(testSuiteFinished) !== -1) {
 			closePage();
 			openPage();
@@ -55,7 +67,7 @@
             phantom.exit();
 		} else {
             if (msg.indexOf(testFailed) !== -1 && render) { // output for image capture
-				if (reporter === 'TeamcityReporter') {
+                if (reporterName === 'TeamcityReporter') {
 					sPos = msg.indexOf('name=') + 5;
 					ePos = msg.indexOf('message=') - 1;
 					msg =  viewports[index - 1].width + 'x' + viewports[index - 1].height + msg.substring(sPos, ePos);
@@ -66,10 +78,6 @@
         }
     }
 
-    function closePage() {
-        page.close();
-    }
-
     function openPage() {
 
         page = require('webpage').create();
@@ -77,18 +85,18 @@
         page.viewportSize = viewports[index];
 
         page.open(url, function (status) {
-            page.injectJs(libPath + 'jasmine.js');
-            page.injectJs(libPath + consoleReporter);
-            if (!!jQueryPath) {
-                page.injectJs(jQueryPath);
+            page.injectJs(jasminePath + 'jasmine.js');
+            page.injectJs(jasminePath + reporterPath);
+            if (!!jsLibraryPath) {
+                page.injectJs(jsLibraryPath);
             }
             page.injectJs(spec);
-			page.evaluate(function (reporter) {
+            page.evaluate(function (reporterName) {
 			    var jasmineEnv = jasmine.getEnv(),
-				    jasmineReporter = eval('jasmine.' + reporter);
+				    jasmineReporter = jasmine[reporterName];
 			    jasmineEnv.addReporter(new jasmineReporter());
                 jasmineEnv.execute();
-            }, reporter);
+            }, reporterName);
 
             if (status !== 'success') {
                 console.log('Unable to load the address!');
@@ -97,7 +105,7 @@
                 window.setTimeout(function () {
                     console.log('Timeout - maybe you specified and incorrect path/parameter or the server is down?');
                     phantom.exit();
-                }, 10000);
+                }, timeout);
             }
 
         });
