@@ -1,4 +1,4 @@
-/* global window, jasmine, require, phantom, console */
+/*global window, jasmine, require, phantom, console */
 (function () {
     'use strict';
 
@@ -27,11 +27,11 @@
 
     if (reporterName === 'ConsoleReporter' || reporterName === 'TerminalReporter') {
         console.log(reporterName + ' is not compatible with ' + errorPrefix + '. The reporter must be capable of grouped output similar to the TeamCity Reporter.');
-		console.log('Feel free to customise your own reporter!');
-		phantom.exit();
+        console.log('Feel free to customise your own reporter!');
+        phantom.exit();
     }
 
-	if (args.length === 3) {
+    if (args.length === 3) {
         spec = args[1].replace(/\\/g, '/');
         url = args[2].replace(/\\/g, '/');
     } else {
@@ -59,19 +59,19 @@
             console.log(msg);
         }
 
-		if (index < viewports.length && msg.indexOf(testSuiteFinished) !== -1) {
-			closePage();
-			openPage();
+        if (index < viewports.length && msg.indexOf(testSuiteFinished) !== -1) {
+            closePage();
+            openPage();
         } else if (index === viewports.length && msg.indexOf(testSuiteFinished) !== -1) {
             closePage();
             phantom.exit();
-		} else {
+        } else {
             if (msg.indexOf(testFailed) !== -1 && render) { // output for image capture
                 if (reporterName === 'TeamcityReporter') {
-					sPos = msg.indexOf('name=') + 5;
-					ePos = msg.indexOf('message=') - 1;
-					msg =  viewports[index - 1].width + 'x' + viewports[index - 1].height + msg.substring(sPos, ePos);
-				}
+                    sPos = msg.indexOf('name=') + 5;
+                    ePos = msg.indexOf('message=') - 1;
+                    msg =  viewports[index - 1].width + 'x' + viewports[index - 1].height + msg.substring(sPos, ePos);
+                }
                 title = msg.replace(/\W/g, '-');
                 page.render(errorPrefix + '-' + title + '-failed' + '.png');
             }
@@ -92,9 +92,9 @@
             }
             page.injectJs(spec);
             page.evaluate(function (reporterName) {
-			    var jasmineEnv = jasmine.getEnv(),
-				    jasmineReporter = jasmine[reporterName];
-			    jasmineEnv.addReporter(new jasmineReporter());
+                var jasmineEnv = jasmine.getEnv(),
+                    jasmineReporter = jasmine[reporterName];
+                jasmineEnv.addReporter(new jasmineReporter());
                 jasmineEnv.execute();
             }, reporterName);
 

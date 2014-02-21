@@ -1,4 +1,4 @@
-/* global window, describe, it, expect */
+/*global window, describe, it, expect */
 (function (window, $) {
 
     'use strict';

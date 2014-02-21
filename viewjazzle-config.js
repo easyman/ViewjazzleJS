@@ -1,10 +1,10 @@
-/* global exports */
+/*global exports */
 /* define your viewjazzle configuration */
 exports.reporterPath = 'jasmine.vj_teamcity_console_reporter.js';
 exports.reporterName = 'TeamcityReporter';
 exports.testMessages = {
-	testFailed: 'testFailed', // denotes a failed test
-	testSuiteFinished: 'testSuiteFinished' // denotes a suite of tests has finished
+    testFailed: 'testFailed', // denotes a failed test
+    testSuiteFinished: 'testSuiteFinished' // denotes a suite of tests has finished
 };
 exports.jsLibraryPath = ''; // loads any other JavaScript library you may require
 exports.jasminePath = 'lib/jasmine-1.3.0/';
