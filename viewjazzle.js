@@ -5,7 +5,7 @@
     var system = require('system'),
         args = system.args,
         config = require('./viewjazzle-config'),
-        errorPrefix = 'viewjazzle',
+        errorPrefix = 'ViewjazzleJS',
         index = 0,
         jsLibraryPath = config.jsLibraryPath,
         jasminePath = config.jasminePath,
@@ -70,7 +70,7 @@
                 if (reporterName === 'TeamcityReporter') {
                     sPos = msg.indexOf('name=') + 5;
                     ePos = msg.indexOf('message=') - 1;
-                    msg =  viewports[index - 1].width + 'x' + viewports[index - 1].height + msg.substring(sPos, ePos);
+                    msg = viewports[index - 1].width + 'x' + viewports[index - 1].height + msg.substring(sPos, ePos);
                 }
                 title = msg.replace(/\W/g, '-');
                 page.render(errorPrefix + '-' + title + '-failed' + '.png');
@@ -103,7 +103,17 @@
                 phantom.exit();
             } else {
                 window.setTimeout(function () {
-                    console.log('Timeout - maybe you specified and incorrect path/parameter or the server is down?');
+                    var prefix = '',
+                        message = 'Timeout/Error - maybe you specified and incorrect path/parameter or the server is down',
+                        suffix = '';
+
+                    if (reporterName === 'TeamcityReporter') {
+                        prefix = '##teamcity[' + testFailed + '] name="';
+                        suffix = '" message="|[FAILED|]" details=""]';
+                    } else if (reporterName === 'TapReporter') {
+                        prefix = testFailed + ' ';
+                    }
+                    console.log(prefix + errorPrefix + ': ' + message + suffix);
                     phantom.exit();
                 }, timeout);
             }
