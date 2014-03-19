@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Viewjazzlejs : Use PhantomJS and Jasmine to test multiple viewports - responsive Jasmine testing!" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Viewjazzlejs</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/easyman/ViewjazzleJS">View on GitHub</a>
+
+          <h1 id="project_title">Viewjazzlejs</h1>
+          <h2 id="project_tagline">Use PhantomJS and Jasmine to test multiple viewports - responsive Jasmine testing!</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/easyman/ViewjazzleJS/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/easyman/ViewjazzleJS/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="viewjazzlejs" class="anchor" href="#viewjazzlejs"><span class="octicon octicon-link"></span></a>ViewjazzleJS</h1>
+
+<p>ViewjazzleJS provides a mechanism for running Jasmine tests for multiple web UI screen sizes using PhantomJS.</p>
+
+<ul>
+<li>Defines a parameterised input to PhantomJS e.g. phantomjs viewjazzle.js [jasmine-spec-file] [target-url].</li>
+<li>Provides a configuration module to define the viewport sizes (responsive modes) and additional parameters.</li>
+<li>Option to render image of failed tests.</li>
+<li>Option to provide configuration of Jasmine Console Reporter - default set to TeamCity.</li>
+</ul><p><em>You will need to write a custom reporter that can group tests in a similar way to the custom TeamCity reporter if you want to use ViewjazzleJS with any other Jasmine console reporter. An example custom Tap reporter is also provided in the repo.</em></p>
+
+<h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<h3>
+<a name="command-line" class="anchor" href="#command-line"><span class="octicon octicon-link"></span></a>Command-line</h3>
+
+<pre><code>phantomjs viewjazzle.js [specfilepath] [url]
+phantomjs viewjazzle.js spec/your-jasmine-spec.js http://your.website.com/
+</code></pre>
+
+<h3>
+<a name="viewjazzle-configjs" class="anchor" href="#viewjazzle-configjs"><span class="octicon octicon-link"></span></a>viewjazzle-config.js</h3>
+
+<pre><code>/*global exports */
+/* define your viewjazzle configuration */
+exports.consoleReporter = 'jasmine.vj_teamcity_console_reporter.js';
+exports.jasmineReporter = 'TeamcityReporter';
+exports.testMessages = {
+    testFailed: 'testFailed',
+    testSuiteFinished: 'testSuiteFinished'
+};
+exports.jsLibraryPath = '';
+exports.libPath = 'lib/jasmine-1.3.0/';
+exports.render = false;
+exports.timeout = 10000;
+exports.viewports = [{ width: 1400, height: 768 }, { width: 1024, height: 768 }, { width: 768, height: 1024 }, { width: 320, height: 640 }];
+</code></pre>
+
+<h4>
+<a name="exportsconsolereporter" class="anchor" href="#exportsconsolereporter"><span class="octicon octicon-link"></span></a>exports.consoleReporter</h4>
+
+<p>Filename of the console reporter you want to use.</p>
+
+<h4>
+<a name="exportsjasminereporter" class="anchor" href="#exportsjasminereporter"><span class="octicon octicon-link"></span></a>exports.jasmineReporter</h4>
+
+<p>Reporter name - related to the exports.consoleReporter specified above.</p>
+
+<h4>
+<a name="exportstestmessages" class="anchor" href="#exportstestmessages"><span class="octicon octicon-link"></span></a>exports.testMessages</h4>
+
+<p>Tells viewjazzle what test messages to look for when managing the message logs coming from the console reporter.</p>
+
+<h4>
+<a name="exportsjslibrarypath" class="anchor" href="#exportsjslibrarypath"><span class="octicon octicon-link"></span></a>exports.jsLibraryPath</h4>
+
+<p>When you require jQuery or any other JS library to be loaded into the web page under test.</p>
+
+<h4>
+<a name="exportslibpath" class="anchor" href="#exportslibpath"><span class="octicon octicon-link"></span></a>exports.libPath</h4>
+
+<p>Jasmine test library path.</p>
+
+<h4>
+<a name="exportsrender" class="anchor" href="#exportsrender"><span class="octicon octicon-link"></span></a>exports.render</h4>
+
+<p>Render failed tests to file.</p>
+
+<h4>
+<a name="exportstimeout" class="anchor" href="#exportstimeout"><span class="octicon octicon-link"></span></a>exports.timeout</h4>
+
+<p>Duration in ms before exiting viewjazzle if something goes wrong.</p>
+
+<h4>
+<a name="exportsviewports" class="anchor" href="#exportsviewports"><span class="octicon octicon-link"></span></a>exports.viewports</h4>
+
+<p>Array of viewport sizes to test. Tells PhantomJS what size page to use when running tests. The suite of tests are run entirely for each viewport.</p>
+
+<h3>
+<a name="jamsine-spec-file-example" class="anchor" href="#jamsine-spec-file-example"><span class="octicon octicon-link"></span></a>Jamsine Spec file example</h3>
+
+<p>Write your Jasmine tests as usual. However, there are some specific points to be aware of. Firstly, PhantomJS iterates over each test case at each of the viewport sizes (your tests will run N number of times for the number of viewport sizes you define in your config module). Secondly, we are using jQuery to do the DOM selection as well as define the viewport size within the tests. You may wish to use your own native selectors or JS library, in which case, simply write your spec file accordingly.</p>
+
+<p>Within the Jasmine spec file we get the screen size (width and height) so we can run tests against these values. We output the viewport variable as part of the test name so we can see this in the console reporter.</p>
+
+<pre><code>/*global window, describe, it, expect */
+(function (window, $) {
+
+    'use strict';
+
+    var screen = {
+            width: $(window).width(),
+            height: $(window).height()
+        },
+        viewport = screen.width + 'x' + screen.height;
+
+    describe('Homepage viewport tests ' + viewport, function () {
+        it('Mobile menu visible', function () {
+            if (screen.width &lt;= 768) {
+                expect($('header nav ul.small-screen').css('display')).toBe('block');
+            } else {
+                expect($('header nav ul.small-screen').css('display')).toBe('none');
+            }
+        });
+    });
+}(this, this.jQuery || this.$));
+</code></pre>
+
+<h3>
+<a name="console-reporters" class="anchor" href="#console-reporters"><span class="octicon octicon-link"></span></a>Console reporters</h3>
+
+<h4>
+<a name="teamcity" class="anchor" href="#teamcity"><span class="octicon octicon-link"></span></a>TeamCity</h4>
+
+<p>In order to get control of the Jasmine test output we use a custom reporter file - in this case, TeamCity.</p>
+
+<p>I found a great TeamCity reporter by Larry Myers (<a href="https://github.com/larrymyers">https://github.com/larrymyers</a>) that I used as a template to create my own custom reporter for TeamCity. The customised TeamCity reporter is included in this repo in the \lib\jasmine-1.3.0 folder.</p>
+
+<h4>
+<a name="tap" class="anchor" href="#tap"><span class="octicon octicon-link"></span></a>Tap</h4>
+
+<p>Based on the work done with the TeamCity reporter, I created a basic Tap reporter, again this is included in the repo in the \lib\jasmine-1.3.0 folder.</p>
+
+<p><strong>You will need to modify the viewjazzle-config.js file when using the Tap reporter</strong> </p>
+
+<pre><code>exports.consoleReporter = 'jasmine.vj_tap_console_reporter.js';
+exports.jasmineReporter = 'TapReporter';
+</code></pre>
+
+<p>If want to render failed tests you need to tell viewjazzle what a failed message looks like so it can catch the failure. The following modification of viewjazzle-config is also needed:</p>
+
+<pre><code>exports.testMessages = {
+    testFailed: 'not ok',
+    ...
+}
+exports.render = true;
+</code></pre>
+
+<h4>
+<a name="other-reporters" class="anchor" href="#other-reporters"><span class="octicon octicon-link"></span></a>Other reporters</h4>
+
+<p>You should be able to create your own reporter based on these customisations, feel free to write your own.</p>
+
+<h3>
+<a name="related-sources" class="anchor" href="#related-sources"><span class="octicon octicon-link"></span></a>Related sources</h3>
+
+<p>PhantomJS <a href="https://github.com/ariya/phantomjs/wiki/API-Reference-WebPage">https://github.com/ariya/phantomjs/wiki/API-Reference-WebPage</a></p>
+
+<p>Jasmine <a href="http://pivotal.github.io/jasmine/">http://pivotal.github.io/jasmine/</a> standalone <a href="https://github.com/pivotal/jasmine">https://github.com/pivotal/jasmine</a></p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Viewjazzlejs maintained by <a href="https://github.com/easyman">easyman</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
