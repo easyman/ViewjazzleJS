@@ -48,7 +48,15 @@
 
 <pre><code>phantomjs viewjazzle.js [specfilepath] [url]
 phantomjs viewjazzle.js spec/your-jasmine-spec.js http://your.website.com/
+phantomjs viewjazzle.js spec/your-jasmine-spec.js http://your.website.com/ "cookie-name,cookie-value,cookie-name,cookie-value"
 </code></pre>
+
+<h3>
+<a name="cookies" class="anchor" href="#cookies"><span class="octicon octicon-link"></span></a>Cookies</h3>
+
+<p>As you can see in the third command-line example above, you may specify a string of name-value pairs for any cookies you need to set for the page you are going to run tests against.</p>
+
+<p>All cookies are cleared by default, and then set again for each responsive mode under test.</p>
 
 <h3>
 <a name="viewjazzle-configjs" class="anchor" href="#viewjazzle-configjs"><span class="octicon octicon-link"></span></a>viewjazzle-config.js</h3>
