@@ -1,37 +1,40 @@
 <!DOCTYPE html>
 <html>
-
   <head>
-    <meta charset='utf-8' />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="ViewjazzleJS : Use PhantomJS and Jasmine to test multiple viewports - responsive Jasmine testing!" />
-
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-
-    <title>ViewjazzleJS</title>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>ViewjazzleJS by easyman</title>
   </head>
 
   <body>
+    <div id="container">
+      <div class="inner">
 
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/easyman/ViewjazzleJS">View on GitHub</a>
-
-          <h1 id="project_title">ViewjazzleJS</h1>
-          <h2 id="project_tagline">Use PhantomJS and Jasmine to test multiple viewports - responsive Jasmine testing!</h2>
-
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/easyman/ViewjazzleJS/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/easyman/ViewjazzleJS/tarball/master">Download this project as a tar.gz file</a>
-            </section>
+        <header>
+          <h1>ViewjazzleJS</h1>
+          <h2>Use PhantomJS and Jasmine to test multiple viewports - responsive Jasmine testing!</h2>
         </header>
-    </div>
 
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <p>ViewjazzleJS provides a mechanism for running Jasmine tests for multiple web UI screen sizes using PhantomJS.</p>
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/easyman/ViewjazzleJS/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/easyman/ViewjazzleJS/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/easyman/ViewjazzleJS" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>
+<a name="viewjazzlejs" class="anchor" href="#viewjazzlejs"><span class="octicon octicon-link"></span></a>ViewjazzleJS</h1>
+
+<p>ViewjazzleJS provides a mechanism for running Jasmine tests for multiple web UI screen sizes using PhantomJS.</p>
 
 <ul>
 <li>Defines a parameterised input to PhantomJS e.g. phantomjs viewjazzle.js [jasmine-spec-file] [target-url].</li>
@@ -69,6 +72,7 @@ exports.testMessages = {
     testFailed: 'testFailed',
     testSuiteFinished: 'testSuiteFinished'
 };
+exports.ignoreMessages = ['minimal-ui'];
 exports.jsLibraryPath = '';
 exports.libPath = 'lib/jasmine-1.3.0/';
 exports.render = false;
@@ -90,6 +94,11 @@ exports.viewports = [{ width: 1400, height: 768 }, { width: 1024, height: 768 },
 <a name="exportstestmessages" class="anchor" href="#exportstestmessages"><span class="octicon octicon-link"></span></a>exports.testMessages</h4>
 
 <p>Tells viewjazzle what test messages to look for when managing the message logs coming from the console reporter.</p>
+
+<h4>
+<a name="exportsignoremessages" class="anchor" href="#exportsignoremessages"><span class="octicon octicon-link"></span></a>exports.ignoreMessages</h4>
+
+<p>An array of string values representing console messages that might be raised by PhantomJS but that you want to ignore.</p>
 
 <h4>
 <a name="exportsjslibrarypath" class="anchor" href="#exportsjslibrarypath"><span class="octicon octicon-link"></span></a>exports.jsLibraryPath</h4>
@@ -167,7 +176,7 @@ exports.viewports = [{ width: 1400, height: 768 }, { width: 1024, height: 768 },
 exports.jasmineReporter = 'TapReporter';
 </code></pre>
 
-<p>If want to render failed tests you need to tell viewjazzle what a failed message looks like so it can catch the failure. The following modification of viewjazzle-config is also needed:</p>
+<p>If you want to render failed tests you need to tell viewjazzle what a failed message looks like so it can catch the failure. The following modification of viewjazzle-config is also needed:</p>
 
 <pre><code>exports.testMessages = {
     testFailed: 'not ok',
@@ -187,18 +196,14 @@ exports.render = true;
 <p>PhantomJS <a href="https://github.com/ariya/phantomjs/wiki/API-Reference-WebPage">https://github.com/ariya/phantomjs/wiki/API-Reference-WebPage</a></p>
 
 <p>Jasmine <a href="http://pivotal.github.io/jasmine/">http://pivotal.github.io/jasmine/</a> standalone <a href="https://github.com/pivotal/jasmine">https://github.com/pivotal/jasmine</a></p>
-      </section>
-    </div>
+        </section>
 
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">ViewjazzleJS maintained by <a href="https://github.com/easyman">easyman</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
-      </footer>
-    </div>
+        <footer>
+          ViewjazzleJS is maintained by <a href="https://github.com/easyman">easyman</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
 
-              <script type="text/javascript">
+                  <script type="text/javascript">
             var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
             document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
           </script>
@@ -209,6 +214,7 @@ exports.render = true;
             } catch(err) {}
           </script>
 
-
+      </div>
+    </div>
   </body>
 </html>
