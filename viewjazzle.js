@@ -19,7 +19,8 @@
         timeout = config.timeout,
         url,
         cookie,
-        viewports = config.viewports;
+        viewports = config.viewports,
+        ignoreMessages = config.ignoreMessages;
 
     if (!phantom) {
         console.log('PhantomJS is required to run ' + errorPrefix);
@@ -33,22 +34,22 @@
     }
 
     switch (args.length) {
-    case 3:
-        spec = args[1].replace(/\\/g, '/');
-        url = args[2].replace(/\\/g, '/');
-        break;
-    case 4:
-        spec = args[1].replace(/\\/g, '/');
-        url = args[2].replace(/\\/g, '/');
-        cookie = args[3].split(',');
-        if (cookie.length % 2 !== 0) {
-            console.log(errorPrefix + ': Specify cookies as name-value pairs, seperated by commas.');
+        case 3:
+            spec = args[1].replace(/\\/g, '/');
+            url = args[2].replace(/\\/g, '/');
+            break;
+        case 4:
+            spec = args[1].replace(/\\/g, '/');
+            url = args[2].replace(/\\/g, '/');
+            cookie = args[3].split(',');
+            if (cookie.length % 2 !== 0) {
+                console.log(errorPrefix + ': Specify cookies as name-value pairs, seperated by commas.');
+                phantom.exit();
+            }
+            break;
+        default:
+            console.log(errorPrefix + ': Jasmine spec file and target page URL parameters not present.');
             phantom.exit();
-        }
-        break;
-    default:
-        console.log(errorPrefix + ': Jasmine spec file and target page URL parameters not present.');
-        phantom.exit();
     }
 
     if (undefined === viewports) {
@@ -67,21 +68,34 @@
         return domain.substring(0, domainEnd);
     }
 
+    function isLoggable(msg) {
+        var i;
+        if (reporterName === 'TapReporter' && msg.indexOf(testSuiteFinished) !== -1) {
+            return false; // exception - used in VJ Tap Reporter to track the test suite finished
+        }
+
+        for (i = 0; i < ignoreMessages.length; i += 1) {
+            if (msg.indexOf(ignoreMessages[i]) !== -1) {
+                // if this is a message we want to ignore from the array of defined messages
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     function closePage() {
         page.clearCookies();
         page.close();
     }
 
     function consoleMessage(msg) {
-        var sPos, ePos, title, isLogged = true;
+        var sPos, ePos, title;
 
-        if (reporterName === 'TapReporter' && msg.indexOf(testSuiteFinished) !== -1) {
-            isLogged = false; // don't log the custom Tap Reporter message 'testSuiteFinished'
-        }
-
-        if (isLogged) {
+        if (isLoggable(msg)) {
             console.log(msg);
         }
+
         // each test to run if not last
         if (index < viewports.length && msg.indexOf(testSuiteFinished) !== -1) {
             closePage();
@@ -94,7 +108,7 @@
                 if (reporterName === 'TeamcityReporter') {
                     sPos = msg.indexOf('name=') + 5;
                     ePos = msg.indexOf('message=') - 1;
-                    msg =  viewports[index - 1].width + 'x' + viewports[index - 1].height + msg.substring(sPos, ePos);
+                    msg = viewports[index - 1].width + 'x' + viewports[index - 1].height + msg.substring(sPos, ePos);
                 }
                 title = msg.replace(/\W/g, '-');
                 page.render(errorPrefix + '-' + title + '-failed' + '.png');
@@ -137,18 +151,17 @@
                 phantom.exit();
             } else {
                 window.setTimeout(function () {
-                    var prefix = '',
-                        message = 'Timeout/Error - maybe you specified and incorrect path/parameter or the server is down',
-                        suffix = '';
+                    var details = 'The spec file exceeded the configured timeout. Increase the viewjazzle-config timeout value, and ensure you configured the correct path and parameters.',
+                        message = errorPrefix + ': FAILED on ' + spec;
 
                     if (reporterName === 'TeamcityReporter') {
-                        prefix = '##teamcity[' + testFailed + '] name="';
-                        suffix = '" message="|[FAILED|]" details="' + message + '"]';
-                        message = '';
+                        console.log("##teamcity[testStarted message='" + message + "' name='" + errorPrefix + "']");
+                        console.log("##teamcity[" + testFailed + " message='" + message + "' name='" + errorPrefix + "' details='" + details + "']");
+                        console.log("##teamcity[testFinished message='" + message + "' name='" + errorPrefix + "']");
                     } else if (reporterName === 'TapReporter') {
-                        prefix = testFailed + ' ';
+                        console.log(message + ' - ' + details);
                     }
-                    console.log(prefix + errorPrefix + ': ' + message + suffix);
+
                     phantom.exit();
                 }, timeout);
             }
