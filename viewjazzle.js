@@ -4,6 +4,7 @@
 
     var system = require('system'),
         args = system.args,
+        params = ['-spec', '-viewports', '-url', '-cookies', '-render', '-reporter'],
         config = require('./viewjazzle-config'),
         errorPrefix = 'ViewjazzleJS',
         index = 0,
@@ -11,16 +12,19 @@
         jasminePath = config.jasminePath,
         page,
         render = config.render,
-        reporterName = config.reporterName,
         reporterPath = config.reporterPath,
+        reporterName = config.reporterName,
         spec,
         testFailed = config.testMessages.testFailed,
         testSuiteFinished = config.testMessages.testSuiteFinished,
         timeout = config.timeout,
         url,
-        cookie,
+        cookies,
         viewports = config.viewports,
-        ignoreMessages = config.ignoreMessages;
+        ignoreMessages = config.ignoreMessages,
+        i,
+        arg,
+        value;
 
     if (!phantom) {
         console.log('PhantomJS is required to run ' + errorPrefix);
@@ -33,23 +37,61 @@
         phantom.exit();
     }
 
-    switch (args.length) {
-        case 3:
-            spec = args[1].replace(/\\/g, '/');
-            url = args[2].replace(/\\/g, '/');
-            break;
-        case 4:
-            spec = args[1].replace(/\\/g, '/');
-            url = args[2].replace(/\\/g, '/');
-            cookie = args[3].split(',');
-            if (cookie.length % 2 !== 0) {
-                console.log(errorPrefix + ': Specify cookies as name-value pairs, seperated by commas.');
-                phantom.exit();
+    function arrayStringToArrayViewportObject(arrayString) {
+        var array = arrayString.substring(1, arrayString.length - 1).split(/\]\s*,\s*\[/),
+            arrayObject = [],
+            subarray,
+            obj,
+            k;
+
+        for (k = 0; k < array.length; k += 1) {
+            array[k] = array[k].replace(/[\[\]']+/g, '');
+            subarray = array[k].split(/\s*,\s*/);
+            obj = {
+                width: subarray[0],
+                height: subarray[1]
+            };
+            arrayObject.push(obj);
+        }
+
+        return arrayObject;
+    }
+
+    for (i = 0; i < args.length; i += 1) {
+        arg = args[i];
+
+        if (params.indexOf(arg) !== -1) {
+            value = args[i + 1];
+            switch (arg) {
+            case '-url':
+                url = value;
+                break;
+            case '-viewports':
+                viewports = arrayStringToArrayViewportObject(value);
+                break;
+            case '-spec':
+                spec = value;
+                break;
+            case '-render':
+                render = (/^true$/i).test(value);
+                break;
+            case '-reporter':
+                if (value === 'tap') {
+                    reporterPath = 'jasmine.vj_tap_console_reporter.js';
+                    reporterName = 'TapReporter';
+                }
+                break;
+            case '-cookies':
+                cookies = value.split(',');
+                if (cookies.length % 2 !== 0) {
+                    console.log(errorPrefix + ': Specify cookies as name-value pairs, seperated by commas.');
+                    phantom.exit();
+                }
+                break;
+            default:
+                break;
             }
-            break;
-        default:
-            console.log(errorPrefix + ': Jasmine spec file and target page URL parameters not present.');
-            phantom.exit();
+        }
     }
 
     if (undefined === viewports) {
@@ -69,13 +111,13 @@
     }
 
     function isLoggable(msg) {
-        var i;
+        var j;
         if (reporterName === 'TapReporter' && msg.indexOf(testSuiteFinished) !== -1) {
             return false; // exception - used in VJ Tap Reporter to track the test suite finished
         }
 
-        for (i = 0; i < ignoreMessages.length; i += 1) {
-            if (msg.indexOf(ignoreMessages[i]) !== -1) {
+        for (j = 0; j < ignoreMessages.length; j += 1) {
+            if (msg.indexOf(ignoreMessages[j]) !== -1) {
                 // if this is a message we want to ignore from the array of defined messages
                 return false;
             }
@@ -117,16 +159,15 @@
     }
 
     function openPage() {
-
-        var i,
+        var cookie,
             domain;
 
         page = require('webpage').create();
 
-        if (cookie) {
+        if (cookies) {
             domain = getDomain(url);
-            for (i = 0; i < cookie.length; i += 2) {
-                phantom.addCookie({ 'name': cookie[i], 'value': cookie[i + 1], 'domain': domain });
+            for (cookie = 0; cookie < cookies.length; cookie += 2) {
+                phantom.addCookie({ 'name': cookies[cookie], 'value': cookies[cookie + 1], 'domain': domain });
             }
         }
 
