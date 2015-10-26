@@ -1,5 +1,5 @@
 /*global exports */
-exports.reporter = 'console';
+exports.reporter = 'teamcity';
 exports.ignoreMessages = ['jasmineDone', 'minimal-ui'];
 exports.jsLibraryPath = 'lib/jquery-1.11.1/jquery-1.11.1.min.js'; // loads any other JavaScript library you may require
 exports.jasminePath = 'lib/jasmine-2.1.0/';
