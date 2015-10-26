@@ -1,10 +1,10 @@
-/*global window, jasmine, require, phantom, console */
-(function () {
+/*global window, jasmine, require, phantom, console, openPage */
+(function (phantom) {
     'use strict';
 
     var system = require('system'),
         args = system.args,
-        params = ['-spec', '-viewports', '-url', '-cookies', '-render', '-reporter'],
+        params = ['-spec', '-viewports', '-url', '-userAgent', '-cookies', '-render', '-reporter'],
         config = require('./viewjazzle-config'),
         errorPrefix = 'ViewjazzleJS',
         index = 0,
@@ -12,13 +12,14 @@
         jasminePath = config.jasminePath,
         page,
         render = config.render,
-        reporterPath = config.reporterPath,
-        reporterName = config.reporterName,
+        reporters = ['console', 'teamcity'],
+        reporter = config.reporter,
         spec,
-        testFailed = config.testMessages.testFailed,
-        testSuiteFinished = config.testMessages.testSuiteFinished,
+        testFailed = 'FAILED',
+        testSuiteFinished = 'jasmineDone',
         timeout = config.timeout,
         url,
+        userAgent,
         cookies,
         viewports = config.viewports,
         ignoreMessages = config.ignoreMessages,
@@ -29,12 +30,6 @@
     if (!phantom) {
         console.log('PhantomJS is required to run ' + errorPrefix);
         return;
-    }
-
-    if (reporterName === 'ConsoleReporter' || reporterName === 'TerminalReporter') {
-        console.log(reporterName + ' is not compatible with ' + errorPrefix + '. The reporter must be capable of grouped output similar to the TeamCity Reporter.');
-        console.log('Feel free to customise your own reporter!');
-        phantom.exit();
     }
 
     function arrayStringToArrayViewportObject(arrayString) {
@@ -57,48 +52,6 @@
         return arrayObject;
     }
 
-    for (i = 0; i < args.length; i += 1) {
-        arg = args[i];
-
-        if (params.indexOf(arg) !== -1) {
-            value = args[i + 1];
-            switch (arg) {
-            case '-url':
-                url = value;
-                break;
-            case '-viewports':
-                viewports = arrayStringToArrayViewportObject(value);
-                break;
-            case '-spec':
-                spec = value;
-                break;
-            case '-render':
-                render = (/^true$/i).test(value);
-                break;
-            case '-reporter':
-                if (value === 'tap') {
-                    reporterPath = 'jasmine.vj_tap_console_reporter.js';
-                    reporterName = 'TapReporter';
-                }
-                break;
-            case '-cookies':
-                cookies = value.split(',');
-                if (cookies.length % 2 !== 0) {
-                    console.log(errorPrefix + ': Specify cookies as name-value pairs, seperated by commas.');
-                    phantom.exit();
-                }
-                break;
-            default:
-                break;
-            }
-        }
-    }
-
-    if (undefined === viewports) {
-        console.log(errorPrefix + ': Viewports array has not been defined - check the config.js file.');
-        phantom.exit();
-    }
-
     function getDomain(location) {
         var domain,
             domainStart,
@@ -112,9 +65,6 @@
 
     function isLoggable(msg) {
         var j;
-        if (reporterName === 'TapReporter' && msg.indexOf(testSuiteFinished) !== -1) {
-            return false; // exception - used in VJ Tap Reporter to track the test suite finished
-        }
 
         for (j = 0; j < ignoreMessages.length; j += 1) {
             if (msg.indexOf(ignoreMessages[j]) !== -1) {
@@ -122,7 +72,6 @@
                 return false;
             }
         }
-
         return true;
     }
 
@@ -132,7 +81,7 @@
     }
 
     function consoleMessage(msg) {
-        var sPos, ePos, title;
+        var detailsStartPos, detailsEndPos, title;
 
         if (isLoggable(msg)) {
             console.log(msg);
@@ -146,21 +95,23 @@
             closePage();
             phantom.exit();
         } else {
-            if (msg.indexOf(testFailed) !== -1 && render) { // output for image capture
-                if (reporterName === 'TeamcityReporter') {
-                    sPos = msg.indexOf('name=') + 5;
-                    ePos = msg.indexOf('message=') - 1;
-                    msg = viewports[index - 1].width + 'x' + viewports[index - 1].height + msg.substring(sPos, ePos);
+            if ((msg.indexOf(testFailed) !== -1) && render) { // output for image capture
+                if (reporter === 'teamcity') {
+                    detailsStartPos = msg.indexOf('details=') + 9;
+                    detailsEndPos = msg.indexOf(']') - 1;
+                    msg = msg.substring(detailsStartPos, detailsEndPos);
                 }
-                title = msg.replace(/\W/g, '-');
-                page.render(errorPrefix + '-' + title + '-failed' + '.png');
+                title = msg.replace('> FAILED : ', '').replace(/\W/g, '-');
+
+                page.render(title.substring(0, 190) + '.png');
             }
         }
     }
 
     function openPage() {
         var cookie,
-            domain;
+            domain,
+            userString;
 
         page = require('webpage').create();
 
@@ -171,21 +122,49 @@
             }
         }
 
+        if (userAgent) {
+            switch (userAgent) {
+            case 'firefox':
+                userString = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0";
+                break;
+            case 'chrome':
+                userString = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36";
+                break;
+            case 'ie':
+                userString = "Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E; rv:11.0) like Gecko";
+                break;
+            default:
+                userString = userAgent;
+                break;
+            }
+            page.settings.userAgent = userString;
+        }
+
         page.onConsoleMessage = consoleMessage;
         page.viewportSize = viewports[index];
+
         page.open(url, function (status) {
-            page.injectJs(jasminePath + 'jasmine.js');
-            page.injectJs(jasminePath + reporterPath);
+            // load additional JS script/library file if specified
             if (!!jsLibraryPath) {
                 page.injectJs(jsLibraryPath);
             }
+
+            // load Jasmine test runner scripts and mock-ajax
+            page.injectJs(jasminePath + 'jasmine.js');
+            page.injectJs('lib/boot-vj.js');
+            page.injectJs(jasminePath + 'mock-ajax.js');
+            page.injectJs(jasminePath + 'jasmine-jquery.js');
+            page.injectJs('lib/' + reporter + '-reporter.js');
+
+            // load the spec script
             page.injectJs(spec);
-            page.evaluate(function (reporterName) {
-                var jasmineEnv = jasmine.getEnv(),
-                    jasmineReporter = jasmine[reporterName];
-                jasmineEnv.addReporter(new jasmineReporter());
-                jasmineEnv.execute();
-            }, reporterName);
+
+            // evaluate the page and execute the jasmine tests with the specified reporter
+            page.evaluate(function () {
+                var env = jasmine.getEnv();
+                env.addReporter(jasmine.customReporter);
+                env.execute();
+            });
 
             if (status !== 'success') {
                 console.log('Unable to load the address!');
@@ -195,14 +174,13 @@
                     var details = 'The spec file exceeded the configured timeout. Increase the viewjazzle-config timeout value, and ensure you configured the correct path and parameters.',
                         message = errorPrefix + ': FAILED on ' + spec;
 
-                    if (reporterName === 'TeamcityReporter') {
+                    if (reporter === 'teamcity') {
                         console.log("##teamcity[testStarted message='" + message + "' name='" + errorPrefix + "']");
                         console.log("##teamcity[" + testFailed + " message='" + message + "' name='" + errorPrefix + "' details='" + details + "']");
                         console.log("##teamcity[testFinished message='" + message + "' name='" + errorPrefix + "']");
-                    } else if (reporterName === 'TapReporter') {
+                    } else if (reporter === 'console') {
                         console.log(message + ' - ' + details);
                     }
-
                     phantom.exit();
                 }, timeout);
             }
@@ -211,6 +189,52 @@
         index += 1;
     }
 
-    openPage();
+    for (i = 0; i < args.length; i += 1) {
+        arg = args[i];
 
-}());
+        if (params.indexOf(arg) !== -1) {
+            value = args[i + 1];
+            switch (arg) {
+            case '-cookies':
+                cookies = value.split(',');
+                if (cookies.length % 2 !== 0) {
+                    console.log(errorPrefix + ': Specify cookies as name-value pairs, seperated by commas.');
+                    phantom.exit();
+                }
+                break;
+            case '-render':
+                render = (/^true$/i).test(value);
+                break;
+            case '-reporter':
+                reporter = value;
+                break;
+            case '-spec':
+                spec = value;
+                break;
+            case '-url':
+                url = value;
+                break;
+            case '-userAgent':
+                userAgent = value;
+                break;
+            case '-viewports':
+                viewports = arrayStringToArrayViewportObject(value);
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
+    if (reporters.indexOf(reporter) === -1) {
+        console.log(reporter + ' is not compatible with ' + errorPrefix + '. The reporter must conform to http://jasmine.github.io/2.1/custom_reporter.html spec.');
+        phantom.exit();
+    }
+
+    if (undefined === viewports) {
+        console.log(errorPrefix + ': Viewports array has not been defined - check the config.js file.');
+        phantom.exit();
+    }
+
+    openPage();
+}(phantom));
